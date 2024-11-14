@@ -202,9 +202,36 @@ export default function Home() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Equifax</TableHead>
-                  <TableHead className="text-right">Experian</TableHead>
-                  <TableHead className="text-right">TransUnion</TableHead>
+                  <TableHead className="text-right">
+                    {" "}
+                    <img
+                      src={
+                        "https://app.creditrepaircloud.com/assets/images/equifax.png?v1"
+                      }
+                      className="w-16 float-end"
+                      alt=""
+                    />
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {" "}
+                    <img
+                      src={
+                        "https://app.creditrepaircloud.com/assets/images/experian.png?v1"
+                      }
+                      className="w-16 float-end"
+                      alt=""
+                    />
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {" "}
+                    <img
+                      src={
+                        "https://app.creditrepaircloud.com/assets/images/trans_union.png?v1"
+                      }
+                      className="w-16 float-end"
+                      alt=""
+                    />
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
