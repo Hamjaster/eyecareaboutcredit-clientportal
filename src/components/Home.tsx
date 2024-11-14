@@ -183,7 +183,7 @@ export default function Home() {
               </div> */}
 
               <Button
-                onClick={() => navigate("/client-portal/dispute-details")}
+                onClick={() => navigate("/dashboard/dispute-details")}
                 className="w-full bg-blue-600 hover:bg-blue-700"
               >
                 See Detailed View

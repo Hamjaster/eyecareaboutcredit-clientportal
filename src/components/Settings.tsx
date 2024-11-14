@@ -45,22 +45,17 @@ import {
   updateAvatar,
 } from "@/store/features/profileFeature/profileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/store";
+import { useNavigate } from "react-router-dom";
 
-const emailPasswordFormSchema = z
-  .object({
-    email: z.string().email("Invalid email address"),
-    currentPassword: z
-      .string()
-      .min(8, "Password must be at least 8 characters"),
-    newPassword: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z
-      .string()
-      .min(8, "Password must be at least 8 characters"),
-  })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
+const emailPasswordFormSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+const changePasswordFormSchema = z.object({
+  currentPassword: z.string().min(8, "Password must be at least 8 characters"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
 
 export default function Settings() {
   const [showPassword, setShowPassword] = useState(false);
@@ -77,7 +72,7 @@ export default function Settings() {
   });
   const dispatch = useAppDispatch();
   const { profile } = useAppSelector((state) => state.profile);
-
+  const navigate = useNavigate();
   const handleLoginUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     // Here you would typically make an API call to update the login details
@@ -106,29 +101,30 @@ export default function Settings() {
     dispatch(deleteAvatar());
   };
 
-  const [isEmailPasswordDialogOpen, setIsEmailPasswordDialogOpen] =
-    useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+
+  const handleLogout = () => {
+    // In a real app, you would implement logout logic here
+    navigate("/");
+    console.log("Logging out...");
+  };
 
   const emailPasswordForm = useForm({
     resolver: zodResolver(emailPasswordFormSchema),
     defaultValues: {
       email: "",
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+      password: "",
     },
   });
 
-  const onSubmitEmailPassword = (data: any) => {
-    // In a real app, you would send this to your backend
-    console.log("Email and password update data:", data);
-    setIsEmailPasswordDialogOpen(false);
-  };
-
-  const handleLogout = () => {
-    // In a real app, you would implement logout logic here
-    console.log("Logging out...");
-  };
+  const changePasswordForm = useForm({
+    resolver: zodResolver(changePasswordFormSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+    },
+  });
 
   return (
     <>
@@ -184,7 +180,7 @@ export default function Settings() {
                   </div>
                   <Button
                     variant="outline"
-                    onClick={() => setIsEmailPasswordDialogOpen(true)}
+                    onClick={() => setIsEmailDialogOpen(true)}
                   >
                     Change Email
                   </Button>
@@ -196,7 +192,7 @@ export default function Settings() {
                   </div>
                   <Button
                     variant="outline"
-                    onClick={() => setIsEmailPasswordDialogOpen(true)}
+                    onClick={() => setIsPasswordDialogOpen(true)}
                   >
                     Change Password
                   </Button>
@@ -379,22 +375,14 @@ export default function Settings() {
         </Card>
       </div>
       {/* Update email pass dialog */}
-      <Dialog
-        open={isEmailPasswordDialogOpen}
-        onOpenChange={setIsEmailPasswordDialogOpen}
-      >
+      <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Update Email and Password</DialogTitle>
-            <DialogDescription>
-              Enter your current password and new details below
-            </DialogDescription>
+            <DialogTitle>Update Email </DialogTitle>
+            <DialogDescription>Enter your new details below</DialogDescription>
           </DialogHeader>
           <Form {...emailPasswordForm}>
-            <form
-              onSubmit={emailPasswordForm.handleSubmit(onSubmitEmailPassword)}
-              className="space-y-4"
-            >
+            <form className="space-y-4">
               <FormField
                 control={emailPasswordForm.control}
                 name="email"
@@ -412,46 +400,13 @@ export default function Settings() {
                   </FormItem>
                 )}
               />
+
               <FormField
+                name="password"
                 control={emailPasswordForm.control}
-                name="currentPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Current Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter current password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={emailPasswordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>New Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Enter new password"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={emailPasswordForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormLabel>Enter Your New Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -467,7 +422,69 @@ export default function Settings() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsEmailPasswordDialogOpen(false)}
+                  onClick={() => setIsEmailDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Update</Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update email pass dialog */}
+      <Dialog
+        open={isPasswordDialogOpen}
+        onOpenChange={setIsPasswordDialogOpen}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Update Email </DialogTitle>
+            <DialogDescription>Enter your new details below</DialogDescription>
+          </DialogHeader>
+          <Form {...changePasswordForm}>
+            <form className="space-y-4">
+              <FormField
+                control={changePasswordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Current Password here"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                name="password"
+                control={emailPasswordForm.control}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Enter Your Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Confirm new password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEmailDialogOpen(false)}
                 >
                   Cancel
                 </Button>

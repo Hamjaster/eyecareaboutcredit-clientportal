@@ -15,11 +15,18 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import NotificationsBell from "./Notifications";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const navItems = ["home", "dispute-details", "settings", "billings"];
+  const navItems = [
+    "dashboard",
+    "messages",
+    "dispute-details",
+    "settings",
+    "billings",
+  ];
   const { profile } = useAppSelector((state) => state.profile);
   const [activeItem, setActiveItem] = useState("dashboard");
   const [isOpen, setIsOpen] = useState(false);
@@ -39,7 +46,7 @@ export default function Navbar() {
 
   const handleNavigation = (item: string) => {
     setActiveItem(item);
-    navigate(item === "home" ? "/" : `/${item}`);
+    navigate(item === "dashboard" ? "/dashboard" : `/dashboard/${item}`);
     setIsOpen(false);
   };
 
@@ -64,8 +71,9 @@ export default function Navbar() {
         ))}
       </nav>
       <div className="flex items-center space-x-4">
+        <NotificationsBell />
         <Avatar
-          onClick={() => navigate("/settings")}
+          onClick={() => navigate("/dashboard/settings")}
           className="w-10 bg-white border shadow-md h-10 cursor-pointer"
         >
           <AvatarImage src={profile?.avatar || ""} alt="User Avatar" />
