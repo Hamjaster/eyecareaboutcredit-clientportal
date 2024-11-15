@@ -11,65 +11,81 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Eye } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { getInitials } from "@/lib/utils";
+
+import InvoiceViewer from "./InvoiceViewer";
+import { stat } from "fs";
+export type InvoiceStatus = "paid" | "partial" | "unpaid" | "pending";
 
 type InvoiceType = {
+  number: string;
   date: string;
-  invoiceNo: string;
   dueDate: string;
-  balance: number;
-  total: number;
-  status: string;
-  companyName: string;
-  companyLogo: string;
-  description: string;
+  status: InvoiceStatus;
+  amount: number;
+  biller: {
+    name: string;
+    logo: string;
+    address: string;
+    taxNumber: string;
+  };
+  client: {
+    name: string;
+    address: string;
+    businessNumber: string;
+  };
+  items: Array<{
+    description: string;
+    quantity: number;
+    price: number;
+  }>;
 };
 
 export default function Billings() {
   const [invoices, setInvoices] = useState<InvoiceType[]>([
     {
+      number: "INV-90765",
       date: "2024-01-15",
-      invoiceNo: "INV-2024-001",
       dueDate: "2024-02-15",
-      balance: 1500.0,
-      total: 3000.0,
-      status: "Partial",
-      companyName: "TechCorp Inc.",
-      companyLogo: "/placeholder.svg?height=50&width=50",
-      description: "IT Services - January 2024",
+      status: "pending",
+      amount: 618.045,
+      biller: {
+        name: "MacroTech",
+        logo: "https://accufy.originlabsoft.com/uploads/medium/mt_medium-310x240_medium-310x240.png",
+        address: "215/Road B, Park Lane\nAndorra",
+        taxNumber: "346346546",
+      },
+      client: {
+        name: "Ammar Zaheer",
+        address: "388783 fhjgsd\nJamaica",
+        businessNumber: "B-1234/234123",
+      },
+      items: [],
     },
     {
-      date: "2024-01-10",
-      invoiceNo: "INV-2024-002",
-      dueDate: "2024-02-10",
-      balance: 0.0,
-      total: 2500.0,
-      status: "Paid",
-      companyName: "DataSys Solutions",
-      companyLogo: "/placeholder.svg?height=50&width=50",
-      description: "Cloud Hosting - Q1 2024",
-    },
-    {
-      date: "2024-01-05",
-      invoiceNo: "INV-2024-003",
-      dueDate: "2024-02-05",
-      balance: 1800.0,
-      total: 1800.0,
-      status: "Unpaid",
-      companyName: "SecureNet Ltd.",
-      companyLogo: "/placeholder.svg?height=50&width=50",
-      description: "Cybersecurity Audit - December 2023",
+      number: "INV-90766",
+      date: "2024-01-12",
+      dueDate: "2024-03-12",
+      status: "paid",
+      amount: 118.05,
+      biller: {
+        name: "TechInfo sys.",
+        logo: "https://accufy.originlabsoft.com/uploads/medium/mt_medium-310x240_medium-310x240.png",
+        address: "215/Road B, Park Lane\nAndorra",
+        taxNumber: "346346546",
+      },
+      client: {
+        name: "Ammar Zaheer",
+        address: "388783 fhjgsd\nJamaica",
+        businessNumber: "B-1234/234123",
+      },
+      items: [
+        {
+          description: "Hy",
+          price: 344,
+          quantity: 21,
+        },
+      ],
     },
   ]);
 
@@ -77,7 +93,6 @@ export default function Billings() {
     null
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState("");
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -95,7 +110,6 @@ export default function Billings() {
   const openModal = (invoice: InvoiceType) => {
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
-    setPaymentAmount("");
   };
 
   const closeModal = () => {
@@ -103,28 +117,16 @@ export default function Billings() {
     setSelectedInvoice(null);
   };
 
-  const handlePayment = () => {
-    if (!selectedInvoice || !paymentAmount) return;
-
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) return;
-
+  const updateStatus = (status: InvoiceStatus) => {
+    if (!selectedInvoice) return;
     const updatedInvoices = invoices.map((invoice) => {
-      if (invoice.invoiceNo === selectedInvoice.invoiceNo) {
-        const newBalance = Math.max(0, invoice.balance - amount);
-        const newStatus =
-          newBalance === 0
-            ? "Paid"
-            : newBalance < invoice.total
-            ? "Partial"
-            : "Unpaid";
-        return { ...invoice, balance: newBalance, status: newStatus };
+      if (invoice.number === selectedInvoice.number) {
+        return { ...invoice, status: status };
       }
       return invoice;
     });
-
+    setSelectedInvoice({ ...selectedInvoice, status });
     setInvoices(updatedInvoices);
-    closeModal();
   };
 
   return (
@@ -140,7 +142,6 @@ export default function Billings() {
               <TableHead>Date</TableHead>
               <TableHead>Invoice No.</TableHead>
               <TableHead>Due Date</TableHead>
-              <TableHead className="text-right">Balance</TableHead>
               <TableHead className="text-right">Total</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Action</TableHead>
@@ -155,24 +156,24 @@ export default function Billings() {
               </TableRow>
             ) : (
               invoices.map((invoice) => (
-                <TableRow key={invoice.invoiceNo}>
+                <TableRow key={invoice.number}>
                   <TableCell>
                     {new Date(invoice.date).toLocaleDateString()}
                   </TableCell>
-                  <TableCell>{invoice.invoiceNo}</TableCell>
+                  <TableCell>{invoice.number}</TableCell>
                   <TableCell>
                     {new Date(invoice.dueDate).toLocaleDateString()}
                   </TableCell>
+
                   <TableCell className="text-right">
-                    ${invoice.balance.toFixed(2)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    ${invoice.total.toFixed(2)}
+                    ${invoice.amount.toFixed(2)}
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant="secondary"
-                      className={`${getStatusColor(invoice.status)} text-white`}
+                      className={`${getStatusColor(
+                        invoice.status
+                      )} hover:${getStatusColor(invoice.status)} text-white`}
                     >
                       {invoice.status}
                     </Badge>
@@ -194,92 +195,14 @@ export default function Billings() {
         </Table>
       </div>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Invoice Details</DialogTitle>
-          </DialogHeader>
-          {selectedInvoice && (
-            <div className="grid gap-4 py-4">
-              <div className="flex items-center justify-between">
-                <Avatar className="w-12 bg-white border shadow-md h-12 cursor-pointer">
-                  <AvatarImage
-                    src={selectedInvoice.companyLogo || ""}
-                    alt="Company Logo"
-                  />
-                  <AvatarFallback>
-                    {getInitials(selectedInvoice.companyName)}
-                  </AvatarFallback>
-                </Avatar>
-
-                <h3 className="text-lg font-semibold">
-                  {selectedInvoice.companyName}
-                </h3>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="invoiceNo">Invoice No.</Label>
-                  <Input
-                    id="invoiceNo"
-                    value={selectedInvoice.invoiceNo}
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="date">Date</Label>
-                  <Input
-                    id="date"
-                    value={new Date(selectedInvoice.date).toLocaleDateString()}
-                    readOnly
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Input
-                  id="description"
-                  value={selectedInvoice.description}
-                  readOnly
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="total">Total</Label>
-                  <Input
-                    id="total"
-                    value={`$${selectedInvoice.total.toFixed(2)}`}
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="balance">Remaining</Label>
-                  <Input
-                    id="balance"
-                    value={`$${selectedInvoice.balance.toFixed(2)}`}
-                    readOnly
-                  />
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="payment">Payment Amount</Label>
-                <Input
-                  id="payment"
-                  type="number"
-                  placeholder="Enter payment amount"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={closeModal} variant="outline">
-              Cancel
-            </Button>
-            <Button onClick={handlePayment}>Make Payment</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {selectedInvoice && (
+        <InvoiceViewer
+          invoice={selectedInvoice}
+          onOpenChange={setIsModalOpen}
+          open={isModalOpen}
+          onStatusChange={updateStatus}
+        />
+      )}
     </div>
   );
 }
